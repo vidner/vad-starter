@@ -25,4 +25,3 @@ configuration:
 # Add an ID only after both services/<id> and checkers/<id> exist.
 services:
   # - notes
-

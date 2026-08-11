@@ -45,4 +45,3 @@ unique across the game.
 
 Never include checker code, exploits, credentials, organizer notes, or signing
 secrets in the bundle or service image. Treat every image layer as player-visible.
-

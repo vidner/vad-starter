@@ -1,0 +1,28 @@
+# Replace the example identity before deploying a game.
+key: example-game
+name: Example Attack-Defense Game
+flag_prefix: EXAMPLE
+
+configuration:
+  tick_duration: 3m
+  flag_lifetime_ticks: 5
+  tick_count: 180
+  registration_open: false
+  max_teams: 40
+  player_peers: 3
+  wireguard_endpoint: __VAD_WIREGUARD_ENDPOINT__
+  wireguard_server_public_key: auto
+  player_tunnel_cidr: 10.70.0.0/24
+  checker_tunnel_cidr: 10.72.0.0/24
+  virtual_target_cidr: 10.80.0.0/24
+  server_transport_cidr: 10.90.0.0/24
+  submission_port: 31337
+  wireguard_mtu: 1380
+  wireguard_keepalive_seconds: 25
+  scoreboard:
+    freeze_before_end: 0s
+
+# Add an ID only after both services/<id> and checkers/<id> exist.
+services:
+  # - notes
+

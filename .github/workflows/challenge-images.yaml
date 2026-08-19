@@ -18,8 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       directories: ${{ steps.services.outputs.directories }}
-      staging_registry: ${{ steps.registry.outputs.staging_registry }}
-      release_registry: ${{ steps.registry.outputs.release_registry }}
+      image_registry: ${{ steps.registry.outputs.image_registry }}
     steps:
       - uses: actions/checkout@v5
       - id: registry
@@ -27,8 +26,7 @@ jobs:
         run: |
           owner=$(printf '%s' "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')
           repository=$(printf '%s' "${GITHUB_REPOSITORY#*/}" | tr '[:upper:]' '[:lower:]')
-          echo "staging_registry=ghcr.io/$owner/$repository-staging" >> "$GITHUB_OUTPUT"
-          echo "release_registry=ghcr.io/$owner/$repository-release" >> "$GITHUB_OUTPUT"
+          echo "image_registry=ghcr.io/$owner/$repository" >> "$GITHUB_OUTPUT"
       - id: services
         shell: bash
         run: |
@@ -41,7 +39,7 @@ jobs:
           fi
           echo "directories=$directories" >> "$GITHUB_OUTPUT"
 
-  staging:
+  build:
     needs: discover
     runs-on: ubuntu-latest
     strategy:
@@ -49,8 +47,7 @@ jobs:
       matrix:
         directory: ${{ fromJSON(needs.discover.outputs.directories) }}
     env:
-      VAD_IMAGE_REGISTRY: ${{ needs.discover.outputs.staging_registry }}
-      VAD_IMAGE_SUFFIX: -${{ github.sha }}
+      VAD_IMAGE_REGISTRY: ${{ needs.discover.outputs.image_registry }}
     steps:
       - uses: actions/checkout@v5
       - uses: docker/setup-buildx-action@v4
@@ -62,66 +59,42 @@ jobs:
       - name: Build and push ${{ matrix.directory }}
         shell: bash
         run: |
-          printf 'services:\n  vpn:\n    image: alpine:3.22.1\n' > "$RUNNER_TEMP/vpn.yaml"
+          package=$(basename "${{ matrix.directory }}")
+          override=$(mktemp)
           docker compose \
             --project-directory "${{ matrix.directory }}" \
             --file "${{ matrix.directory }}/compose.yaml" \
-            --file "$RUNNER_TEMP/vpn.yaml" \
-            build --pull --push
-
-  release:
-    needs:
-      - discover
-      - staging
-    runs-on: ubuntu-latest
-    environment: image-release
-    strategy:
-      fail-fast: false
-      matrix:
-        directory: ${{ fromJSON(needs.discover.outputs.directories) }}
-    env:
-      VAD_IMAGE_REGISTRY: ${{ needs.discover.outputs.staging_registry }}
-      VAD_IMAGE_SUFFIX: -${{ github.sha }}
-      RELEASE_REGISTRY: ${{ needs.discover.outputs.release_registry }}
-      RELEASE_TAG: ${{ github.ref_name }}
-    steps:
-      - uses: actions/checkout@v5
-      - uses: docker/setup-buildx-action@v4
-      - uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Promote ${{ matrix.directory }}
-        shell: bash
-        run: |
-          printf 'services:\n  vpn:\n    image: alpine:3.22.1\n' > "$RUNNER_TEMP/vpn.yaml"
-          images=$(docker compose \
+            config --format json \
+            | jq \
+              --arg registry "$VAD_IMAGE_REGISTRY" \
+              --arg package "$package" \
+              '{
+                services: (
+                  .services
+                  | to_entries
+                  | map(select(.value.build != null) | {
+                      key: .key,
+                      value: {
+                        image: (
+                          $registry + ":" + $package + "-" + (
+                            (
+                              if (.value.build | type) == "string" then .value.build
+                              elif (.value.build.context // "") != "" then .value.build.context
+                              else .key
+                              end
+                            )
+                            | sub("/+$"; "")
+                            | split("/")
+                            | last
+                          )
+                        )
+                      }
+                    })
+                  | from_entries
+                )
+              }' > "$override"
+          docker compose \
             --project-directory "${{ matrix.directory }}" \
             --file "${{ matrix.directory }}/compose.yaml" \
-            --file "$RUNNER_TEMP/vpn.yaml" \
-            config --images | sort -u)
-          prefix="$VAD_IMAGE_REGISTRY:"
-          suffix="-$GITHUB_SHA"
-          promoted=0
-          for source in $images; do
-            case "$source" in
-              "$prefix"*) ;;
-              *) continue ;;
-            esac
-            source_tag=${source#"$prefix"}
-            service=${source_tag%"$suffix"}
-            if [ "$service" = "$source_tag" ]; then
-              echo "Unexpected staging image tag: $source" >&2
-              exit 1
-            fi
-            docker buildx imagetools create \
-              --tag "$RELEASE_REGISTRY:$service" \
-              --tag "$RELEASE_REGISTRY:$service-$RELEASE_TAG" \
-              "$source"
-            promoted=$((promoted + 1))
-          done
-          if [ "$promoted" -eq 0 ]; then
-            echo "No buildable challenge images found" >&2
-            exit 1
-          fi
+            --file "$override" \
+            build --pull --push

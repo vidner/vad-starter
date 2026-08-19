@@ -17,6 +17,7 @@ configuration:
   virtual_target_cidr: 10.80.0.0/24
   server_transport_cidr: 10.90.0.0/24
   submission_port: 31337
+  service_image_registry: ghcr.io/YOUR_GITHUB_OWNER/YOUR_GAME_REPOSITORY
   wireguard_mtu: 1380
   wireguard_keepalive_seconds: 25
   scoreboard:

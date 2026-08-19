@@ -31,29 +31,33 @@ The service ID is the shared directory name. It must be lowercase and match
 
 ## Service images
 
-Authors retain `build` in service Compose files for local development. Each
-buildable service also declares the public image players will pull:
+Authors retain `build` in service Compose files for local development. VAD and
+the release workflow derive the published image tag from the service package and
+build context:
 
 ```yaml
 services:
   notes-app:
-    image: ${VAD_IMAGE_REGISTRY:-ghcr.io/YOUR_GITHUB_OWNER/YOUR_GAME_REPOSITORY-release}:notes-app${VAD_IMAGE_SUFFIX:-}
     build: ./app
-    network_mode: service:vpn
+    ports:
+      - "127.0.0.1:10001:10001"
 ```
 
-Replace `YOUR_GITHUB_OWNER/YOUR_GAME_REPOSITORY` in every service Compose file
-with the lowercase owner and generated repository name. VAD removes `build` from
-the player copy, leaving only the published image reference. The generated team
-bundle still builds its small WireGuard attachment locally.
+Set `configuration.service_image_registry` in `game.yaml` to the single GHCR
+package players will pull, for example
+`ghcr.io/YOUR_GITHUB_OWNER/YOUR_GAME_REPOSITORY`. The author Compose file is
+directly runnable locally. VAD produces the player copy by replacing buildable
+services with image references such as `notes-app`, removing local port
+publishing and local network attachments, then joining the services to its
+generated VPN namespace. The generated team bundle pulls its small WireGuard
+attachment from `ghcr.io/vidner/vad-vpn:latest`; the team server never builds it.
 
 Normal pushes do not build images. A pushed `release-*` tag runs the included
 workflow, which:
 
 1. discovers every `services/*/compose.yaml` dynamically;
-2. builds commit-addressed images into a private `<repository>-staging` GHCR
-   package; and
-3. promotes them into `<repository>-release` only if every build succeeds.
+2. injects image tags for buildable services; and
+3. builds and pushes those images into one GHCR package: `<repository>`.
 
 No personal access token is stored. GitHub Actions authenticates with its
 short-lived `GITHUB_TOKEN`.
@@ -63,8 +67,8 @@ short-lived `GITHUB_TOKEN`.
 Before the first release:
 
 1. Enable GitHub Actions and allow the workflow `packages: write` permission.
-2. Create an `image-release` environment and add the desired deployment
-   protection or required reviewers.
+2. Set `configuration.service_image_registry` in `game.yaml` to the lowercase
+   GHCR package name for the game repository.
 3. Protect the `release-*` tag pattern with a repository ruleset.
 
 Publish a tested commit with a deterministic tag:
@@ -74,11 +78,10 @@ git tag "release-$(git rev-parse --short=12 HEAD)"
 git push origin --tags
 ```
 
-The first run creates `<repository>-staging` and `<repository>-release` as
-private packages. Keep staging private. When the release is ready for players,
-change only `<repository>-release` to **public** in its package settings. Public
-GHCR images can then be pulled anonymously; GitHub does not allow a public
-package to be changed back to private.
+The first run creates `<repository>` as a private package. When the release is
+ready for players, change that package to **public** in its package settings.
+Public GHCR images can then be pulled anonymously; GitHub does not allow a
+public package to be changed back to private.
 
 Players receive an image-only Compose bundle and start it normally:
 

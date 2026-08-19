@@ -73,37 +73,45 @@ Rules:
 VAD rejects selected symlinks, traversal, unmatched entries, files over 16 MiB,
 packages over 128 MiB, and a selected bundle set over 256 MiB.
 
-## 2. Write the service Compose fragment
+## 2. Write the service Compose project
 
-Keep `build` for author development and declare the image players will pull:
+Keep `build` for author development. Do not put the VAD release image in the
+service Compose file; VAD and the workflow inject it:
 
 ```yaml
 services:
   notes-app:
-    image: ${VAD_IMAGE_REGISTRY:-ghcr.io/YOUR_GITHUB_OWNER/YOUR_GAME_REPOSITORY-release}:notes-app${VAD_IMAGE_SUFFIX:-}
     build: ./app
     environment:
       NOTES_DATA_DIR: /data
     volumes:
       - notes-data:/data
-    network_mode: service:vpn
+    ports:
+      - "127.0.0.1:10001:10001"
 
 volumes:
   notes-data:
 ```
 
-Replace the owner and repository placeholders before release. The included
-workflow overrides `VAD_IMAGE_REGISTRY` and `VAD_IMAGE_SUFFIX` while building;
-the literal default is what player Compose uses after VAD strips `build`.
+Set `configuration.service_image_registry` in `game.yaml` before release. The
+included workflow injects `image: <registry>:<package>-<build-context>` while
+building, and VAD injects the same image name into the player bundle after it
+strips `build`. Authors can start this file directly with
+`docker compose up --build`; the published image does not need to exist first.
+If several services share that image, give each one the same `build`
+configuration.
 
 Compose rules:
 
-- Every service container, database, and sidecar uses
-  `network_mode: service:vpn`.
-- Do not use `ports` or `expose`; the manifest is the only public-port contract.
+- Use ordinary Compose networking and service-name DNS for local development.
+- Local `ports`, `expose`, `networks`, and `network_mode` settings are
+  author-only. VAD removes them from the player copy and applies
+  `network_mode: service:vpn` to every service.
+- The manifest remains the only tournament VPN public-port contract. Local
+  host publishing does not expose a port to players.
 - Prefix Compose service names with the stable service ID.
-- Containers sharing the VPN namespace communicate over `127.0.0.1` and must
-  listen on distinct ports.
+- Service names continue to resolve after VAD moves containers into the shared
+  VPN namespace. Services must still listen on distinct container ports.
 - Use named volumes for state that must survive restarts.
 - Do not use privileged mode, host networking, host PID, or the Docker socket.
 - Leave image-only dependencies such as `redis:7.2-alpine` on their upstream
@@ -275,9 +283,9 @@ git tag "release-$(git rev-parse --short=12 HEAD)"
 git push origin --tags
 ```
 
-The tag-triggered workflow first builds every service into private staging. It
-updates the release package only after all builds succeed. Normal branch pushes
-do not consume image-building Actions minutes.
+The tag-triggered workflow builds every buildable service into the single GHCR
+package configured by `service_image_registry`. Normal branch pushes do not
+consume image-building Actions minutes.
 
 ## Common failures
 
@@ -285,7 +293,7 @@ do not consume image-building Actions minutes.
 | --- | --- |
 | Bootstrap rejects a package | Manifest ID, bundle allowlist, port, or Compose validation is wrong. |
 | Service is unreachable | Wrong listen address/port or missing manifest port. |
-| Compose rejects `ports`/`expose` | Remove them and use manifest ports plus `network_mode: service:vpn`. |
+| A port works locally but not over the VPN | Add its container port to `manifest.yaml`; local Compose `ports` are author-only. |
 | Checker cannot connect | It hard-coded a target or ignored `context.host`. |
 | Opponents cannot exploit a placed flag | Public state is insufficient to locate it. |
 | Old `GET` jobs fail | The service overwrote or expired flag state too early. |

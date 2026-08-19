@@ -34,14 +34,16 @@ bundle:
   - compose.yaml
 ```
 
-VAD removes `build` from Compose services that also declare `image`, so players
-receive image-only definitions. Source remains in this author repository and in
-whatever form the built image layers expose.
+`compose.yaml` is an ordinary standalone project for author testing. Publish
+local-only host ports there and run it with `docker compose up --build`.
 
-Every application container must use `network_mode: service:vpn`. Do not publish
-ports with Compose `ports` or `expose`; declare reachable TCP ports only in the
-manifest. Prefix Compose service names with the stable service ID so they remain
-unique across the game.
+When VAD assembles a player bundle, it replaces buildable services with image
+references from `configuration.service_image_registry`, removes local port and
+network settings, and places every container in the generated VPN service's
+network namespace. Compose service names remain available for
+container-to-container connections. Declare the TCP ports reachable through the
+tournament VPN in the manifest, and prefix Compose service names with the stable
+service ID so they remain unique across the game.
 
 Never include checker code, exploits, credentials, organizer notes, or signing
 secrets in the bundle or service image. Treat every image layer as player-visible.

@@ -161,19 +161,6 @@ CMD ["python", "main.py"]
 Pin the SDK and all additional dependencies. Checker images remain private and
 must never be shipped to teams.
 
-Install the pinned SDK release in your authoring environment and run the shared
-integration contract from the game repository root:
-
-```sh
-python -m pip install https://github.com/vidner/vad-sdk/archive/refs/tags/v0.2.0.zip
-python -m vad_checker.integration notes
-```
-
-The SDK discovers `game.yaml`, `services/notes`, and `checkers/notes`, starts an
-isolated Compose project, and validates CHECK plus every store's PUT, GET,
-idempotent retry, and flag retention behavior. Keep service-specific unit and
-regression tests separate from this command.
-
 ## 4. Implement `PUT`, `GET`, and `CHECK`
 
 The Python SDK provides `Context`, `State`, `Outcome`, and `serve`:
@@ -274,20 +261,31 @@ ports after registrations exist is a breaking game change.
 
 ## 6. Test and release
 
+Install the pinned SDK release in your authoring environment, then run the
+shared integration contract from the game repository root:
+
+```sh
+python -m pip install https://github.com/vidner/vad-sdk/archive/refs/tags/v0.2.0.zip
+python -m vad_checker.integration notes
+```
+
+The SDK discovers `game.yaml`, `services/notes`, and `checkers/notes`, starts an
+isolated Compose project, and validates CHECK plus every store's PUT, GET,
+idempotent retry, and flag retention behavior. Keep service-specific unit and
+regression tests separate from this command.
+
 Before release:
 
-1. Build the service and checker images locally.
-2. Exercise every `PUT`, `GET`, and `CHECK` path, including retries with the same
-   idempotency key.
-3. Confirm the service retains every flag for at least `flag_lifetime_ticks`.
-4. Start a generated team bundle on Linux and test every declared port from a
+1. Run the SDK integration contract for every enabled service.
+2. Confirm the service retains every flag for at least `flag_lifetime_ticks`.
+3. Start a generated team bundle on Linux and test every declared port from a
    player WireGuard peer.
-5. Register multiple teams and verify isolated persistent data and distinct
+4. Register multiple teams and verify isolated persistent data and distinct
    virtual target hosts.
-6. Verify target API output contains only minimal public state.
-7. Inspect the player ZIP and service image layers for accidental checker code,
+5. Verify target API output contains only minimal public state.
+6. Inspect the player ZIP and service image layers for accidental checker code,
    exploits, secrets, and organizer notes.
-8. Test a real exploit and flag submission end to end.
+7. Test a real exploit and flag submission end to end.
 
 Publish only a tested commit:
 

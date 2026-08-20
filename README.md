@@ -96,6 +96,14 @@ Checker images install the public `vad-checker` SDK from a pinned release of
 [`vidner/vad-sdk`](https://github.com/vidner/vad-sdk). Pin the version in every
 checker Dockerfile and upgrade it deliberately.
 
+Install the same SDK release in your authoring environment, then run service
+integration tests from the repository root:
+
+```sh
+python -m pip install https://github.com/vidner/vad-sdk/archive/refs/tags/v0.2.0.zip
+python -m vad_checker.integration <service-id>
+```
+
 ## Security boundary
 
 Assume players can inspect every service image, filesystem layer, environment

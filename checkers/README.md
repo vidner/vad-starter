@@ -35,6 +35,12 @@ implement `PUT`, `GET`, and `CHECK`, use `context.host` as the target, preserve
 old flags for their configured lifetime, and return only minimal attacker-useful
 state as public state.
 
+From the game repository root, run the SDK-owned integration contract with:
+
+```sh
+python -m vad_checker.integration <service-id>
+```
+
 Checker sources are never included in player bundles. Keep the generated game
 repository private until your disclosure policy permits publishing checker
 logic, intended vulnerabilities, and exploits.

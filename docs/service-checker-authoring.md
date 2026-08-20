@@ -152,7 +152,7 @@ Example Python Dockerfile:
 ```dockerfile
 FROM python:3.13-alpine
 WORKDIR /app
-RUN pip install --no-cache-dir https://github.com/vidner/vad-sdk/archive/refs/tags/v0.1.0.zip
+RUN pip install --no-cache-dir https://github.com/vidner/vad-sdk/archive/refs/tags/v0.2.0.zip
 COPY checkers/notes/src /app
 USER nobody
 CMD ["python", "main.py"]
@@ -160,6 +160,19 @@ CMD ["python", "main.py"]
 
 Pin the SDK and all additional dependencies. Checker images remain private and
 must never be shipped to teams.
+
+Install the pinned SDK release in your authoring environment and run the shared
+integration contract from the game repository root:
+
+```sh
+python -m pip install https://github.com/vidner/vad-sdk/archive/refs/tags/v0.2.0.zip
+python -m vad_checker.integration notes
+```
+
+The SDK discovers `game.yaml`, `services/notes`, and `checkers/notes`, starts an
+isolated Compose project, and validates CHECK plus every store's PUT, GET,
+idempotent retry, and flag retention behavior. Keep service-specific unit and
+regression tests separate from this command.
 
 ## 4. Implement `PUT`, `GET`, and `CHECK`
 

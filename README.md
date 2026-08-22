@@ -100,7 +100,7 @@ Install the same SDK release in your authoring environment, then run service
 integration tests from the repository root:
 
 ```sh
-python -m pip install https://github.com/vidner/vad-sdk/archive/refs/tags/v0.2.0.zip
+python -m pip install https://github.com/vidner/vad-sdk/archive/refs/tags/v0.2.1.zip
 python -m vad_checker.integration <service-id>
 ```
 

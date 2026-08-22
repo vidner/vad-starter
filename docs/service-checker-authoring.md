@@ -152,7 +152,7 @@ Example Python Dockerfile:
 ```dockerfile
 FROM python:3.13-alpine
 WORKDIR /app
-RUN pip install --no-cache-dir https://github.com/vidner/vad-sdk/archive/refs/tags/v0.2.0.zip
+RUN pip install --no-cache-dir https://github.com/vidner/vad-sdk/archive/refs/tags/v0.2.1.zip
 COPY checkers/notes/src /app
 USER nobody
 CMD ["python", "main.py"]
@@ -234,6 +234,11 @@ bearer token, secret filesystem path, or checker-only credential in public state
 state normally maps to `FLAG_MISSING`; broken normal service behaviour maps to
 `SERVICE_FAILURE`; checker bugs map to `CHECKER_FAILURE`.
 
+The SDK maps the overall job deadline to `SERVICE_FAILURE/service_timeout`.
+Checker HTTP, socket, and subprocess adapters must likewise translate
+target-controlled connection errors and timeouts to `SERVICE_FAILURE`; do not
+let them escape as generic checker exceptions.
+
 Jobs can be retried. Make `PUT` and `CHECK` idempotent using
 `context.idempotency_key` where possible. Never delete earlier flags, reset the
 database, rotate global secrets, or assume a clean service instance.
@@ -265,7 +270,7 @@ Install the pinned SDK release in your authoring environment, then run the
 shared integration contract from the game repository root:
 
 ```sh
-python -m pip install https://github.com/vidner/vad-sdk/archive/refs/tags/v0.2.0.zip
+python -m pip install https://github.com/vidner/vad-sdk/archive/refs/tags/v0.2.1.zip
 python -m vad_checker.integration notes
 ```
 

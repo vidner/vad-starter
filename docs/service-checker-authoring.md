@@ -285,12 +285,14 @@ Before release:
 2. Confirm the service retains every flag for at least `flag_lifetime_ticks`.
 3. Start a generated team bundle on Linux and test every declared port from a
    player WireGuard peer.
-4. Register multiple teams and verify isolated persistent data and distinct
+4. Request an author WireGuard profile and reproduce checker and exploit
+   traffic against the deployed virtual target.
+5. Register multiple teams and verify isolated persistent data and distinct
    virtual target hosts.
-5. Verify target API output contains only minimal public state.
-6. Inspect the player ZIP and service image layers for accidental checker code,
+6. Verify target API output contains only minimal public state.
+7. Inspect the player ZIP and service image layers for accidental checker code,
    exploits, secrets, and organizer notes.
-7. Test a real exploit and flag submission end to end.
+8. Test a real exploit and flag submission end to end.
 
 Publish only a tested commit:
 

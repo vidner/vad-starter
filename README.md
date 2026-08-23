@@ -104,6 +104,18 @@ python -m pip install https://github.com/vidner/vad-sdk/archive/refs/tags/v0.2.1
 python -m vad_checker.integration <service-id>
 ```
 
+## Author VPN access
+
+During deployed testing, an organizer can issue one or more author WireGuard
+profiles with `vadctl wireguard authors GAME_ID AMOUNT`. The private keys are
+generated on the organizer's machine and are never sent to VAD. Each profile can
+reach declared challenge TCP ports and player tunnel addresses, which lets an
+author reproduce checker and exploit traffic against the tournament network.
+
+Keep `configuration.author_tunnel_cidr` distinct from the player, checker,
+target, and server transport ranges. Author VPN access does not grant container
+shell or monitoring-dashboard access.
+
 ## Security boundary
 
 Assume players can inspect every service image, filesystem layer, environment

@@ -96,11 +96,12 @@ Checker images install the public `vad-checker` SDK from a pinned release of
 [`vidner/vad-sdk`](https://github.com/vidner/vad-sdk). Pin the version in every
 checker Dockerfile and upgrade it deliberately.
 
-Install the same SDK release in your authoring environment, then run service
-integration tests from the repository root:
+Start the service first (`docker compose -f services/<service-id>/compose.yaml
+up --build -d`), install the same SDK release in your authoring environment,
+then run service integration tests from the repository root:
 
 ```sh
-python -m pip install https://github.com/vidner/vad-sdk/archive/refs/tags/v0.2.1.zip
+python -m pip install https://github.com/vidner/vad-sdk/archive/refs/tags/v0.3.0.zip
 python -m vad_checker.integration <service-id>
 ```
 

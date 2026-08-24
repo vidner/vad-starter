@@ -152,7 +152,7 @@ Example Python Dockerfile:
 ```dockerfile
 FROM python:3.13-alpine
 WORKDIR /app
-RUN pip install --no-cache-dir https://github.com/vidner/vad-sdk/archive/refs/tags/v0.2.1.zip
+RUN pip install --no-cache-dir https://github.com/vidner/vad-sdk/archive/refs/tags/v0.3.0.zip
 COPY checkers/notes/src /app
 USER nobody
 CMD ["python", "main.py"]
@@ -266,18 +266,21 @@ ports after registrations exist is a breaking game change.
 
 ## 6. Test and release
 
-Install the pinned SDK release in your authoring environment, then run the
-shared integration contract from the game repository root:
+Start the service first, install the pinned SDK release in your authoring
+environment, then run the shared integration contract from the game repository
+root:
 
 ```sh
-python -m pip install https://github.com/vidner/vad-sdk/archive/refs/tags/v0.2.1.zip
+docker compose -f services/notes/compose.yaml up --build -d
+python -m pip install https://github.com/vidner/vad-sdk/archive/refs/tags/v0.3.0.zip
 python -m vad_checker.integration notes
 ```
 
-The SDK discovers `game.yaml`, `services/notes`, and `checkers/notes`, starts an
-isolated Compose project, and validates CHECK plus every store's PUT, GET,
-idempotent retry, and flag retention behavior. Keep service-specific unit and
-regression tests separate from this command.
+The SDK discovers `game.yaml`, `services/notes`, and `checkers/notes`, refuses
+to run if the service isn't already up, then attaches the checker to the
+running service and validates CHECK plus every store's PUT, GET, idempotent
+retry, and flag retention behavior. It leaves the service running afterward.
+Keep service-specific unit and regression tests separate from this command.
 
 Before release:
 

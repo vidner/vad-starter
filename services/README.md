@@ -25,6 +25,8 @@ contains only `compose.yaml`:
 
 ```yaml
 id: notes
+authors:
+  - alice
 stores:
   - private_notes
 ports:

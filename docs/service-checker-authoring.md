@@ -46,6 +46,9 @@ Example `manifest.yaml`:
 ```yaml
 id: notes
 
+authors:
+  - alice
+
 stores:
   - private_notes
   - shared_drafts
@@ -62,6 +65,9 @@ bundle:
 Rules:
 
 - `id` must equal the directory name.
+- `authors` is optional: a list of up to 64-character display names, each
+  appearing once. It is shown to players as service credit; it never affects
+  bundling or checker behavior.
 - Store IDs follow the same lowercase identifier rule and must remain stable.
 - Ports must be valid and unique across every enabled service in the game.
 - Checker timeout must be greater than zero and no more than one minute.
